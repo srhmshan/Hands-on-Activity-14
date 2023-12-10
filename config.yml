@@ -1,0 +1,47 @@
+---
+
+- hosts: all
+  become: true
+  pre_tasks:
+
+  - name: Installing Updates (Ubuntu)
+    apt:
+      update_cache: yes
+      upgrade: dist
+    when: ansible_distribution == "Ubuntu"
+
+  - name: Install MariaDB (Ubuntu)
+    apt:
+      name:
+      -  mariadb-server
+      state: latest
+    when: ansible_distribution == "Ubuntu"
+
+  - name: Install Apache (Ubuntu)
+    apt:
+      name:
+      - apache2
+      state: latest
+    when: ansible_distribution == "Ubuntu"
+
+  - name: Install MySQL (Ubuntu)
+    apt:
+      name:
+        -  mysql-server
+      state: latest
+    when: ansible_distribution == "Ubuntu"
+
+- hosts: keystone
+  become: true
+  roles:
+    - role: keystone
+
+- hosts: glance
+  become: true
+  roles:
+    - role: glance
+
+- hosts: nova
+  become: true
+  roles:
+    - role: nova

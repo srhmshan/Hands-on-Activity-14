@@ -1,0 +1,50 @@
+
+- name: Installing Keystone (Ubuntu)
+  apt:
+    name: keystone
+    state: latest
+
+- name: Configuring Keystone Config File Database Connection
+  lineinfile:
+    dest: /etc/keystone/keystone.conf
+    insertafter: '\[database\]'
+    regexp: 'connection = mysql+pymysql://keystone:KEYSTONE_DBPASS@controller/keystone'
+    line: 'connection = mysql+pymysql://keystone:admin123@controller/keystone'
+    backup: yes
+    backrefs: yes
+
+- name: Configuring Keystone Config File Token Provider
+  lineinfile:
+    dest: /etc/keystone/keystone.conf
+    insertafter: '\[token\]'
+    line: 'provider = fernet'
+    backup: yes
+
+- name: Populating Keystone Database
+  shell:
+    sudo keystone-manage db_sync
+
+- name: Initialize Keystone Fernet Key
+  shell:
+    keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone
+
+- name: Initialize Keystone Fernet Key (Credential Setup)
+  shell:
+    keystone-manage credential_setup --keystone-user keystone --keystone-group keystone
+
+- name: Configure Apache (HTTP) Server for Keystone
+  lineinfile:
+    dest: /etc/apache2/apache2.conf
+    line: 'ServerName controller'
+    state: present
+    backup: yes
+
+- name: Configure Administrative Account Environmental Variables
+  shell: |
+    export OS_USERNAME=admin
+    export OS_PASSWORD=ADMIN_PASS
+    export OS_PROJECT_NAME=admin
+    export OS_USER_DOMAIN_NAME=Default
+    export OS_PROJECT_DOMAIN_NAME=Default
+    export OS_AUTH_URL=http://controller:5000/v3
+    export OS_IDENTITY_API_VERSION=3
